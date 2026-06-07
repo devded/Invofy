@@ -12,8 +12,8 @@
   --ivory:       #faf9f5;
   --warm-sand:   #e8e6dc;
 
-  --brand:       #30302E;
-  --brand-light: #4D4D4A;
+  --brand:       #6b6a64;
+  --brand-light: #7e7d77;
   --brand-tint:  #EBEAE4;
 
   --near-black:  #141413;
@@ -94,6 +94,52 @@ html, body {
   margin-bottom: 12px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.section-actions select {
+  font-family: var(--serif);
+  font-size: 10px;
+  padding: 1px 4px;
+  height: 20px;
+  width: 110px;
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--near-black);
+}
+
+.btn-text-action {
+  background: none;
+  border: none;
+  color: var(--stone);
+  font-family: var(--serif);
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-text-action:hover {
+  color: var(--brand);
+  background: var(--brand-tint);
+}
+
+.btn-text-action.danger:hover {
+  color: #b34a4a;
+  background: #fdf0f0;
 }
 
 .field-row {
@@ -589,7 +635,16 @@ textarea { resize: vertical; min-height: 64px; }
 
     <!-- Your Business -->
     <div class="form-section">
-      <div class="form-section-title">Your Business</div>
+      <div class="form-section-title">
+        <span>Your Business</span>
+        <div class="section-actions">
+          <select id="select-saved-biz" onchange="loadSavedBiz(this.value)">
+            <option value="">— Load Saved —</option>
+          </select>
+          <button type="button" class="btn-text-action" onclick="saveBiz()">Save</button>
+          <button type="button" class="btn-text-action danger" onclick="deleteBiz()">Delete</button>
+        </div>
+      </div>
       <div class="field-row full">
         <div class="field">
           <label for="f-biz-name">Business / Your Name</label>
@@ -649,7 +704,16 @@ textarea { resize: vertical; min-height: 64px; }
 
     <!-- Bill To -->
     <div class="form-section">
-      <div class="form-section-title">Bill To</div>
+      <div class="form-section-title">
+        <span>Bill To</span>
+        <div class="section-actions">
+          <select id="select-saved-client" onchange="loadSavedClient(this.value)">
+            <option value="">— Load Saved —</option>
+          </select>
+          <button type="button" class="btn-text-action" onclick="saveClient()">Save</button>
+          <button type="button" class="btn-text-action danger" onclick="deleteClient()">Delete</button>
+        </div>
+      </div>
       <div class="field-row full">
         <div class="field">
           <label for="f-cli-name">Client Name / Company</label>
@@ -1002,11 +1066,171 @@ function clearForm() {
   document.getElementById('f-discount').value = '0';
   document.getElementById('f-tax').value = '0';
   document.getElementById('f-shipping').value = '0';
+  
+  const selBiz = document.getElementById('select-saved-biz');
+  if (selBiz) selBiz.value = '';
+  const selCli = document.getElementById('select-saved-client');
+  if (selCli) selCli.value = '';
+  
   items = [{ desc: '', qty: 1, price: 0 }];
   render();
 }
 
-// Set today's date and +30 days due by default
+// LocalStorage helpers
+function getSavedItems(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveItems(key, itemsObj) {
+  localStorage.setItem(key, JSON.stringify(itemsObj));
+}
+
+// Business Profiles
+function updateBizDropdown() {
+  const select = document.getElementById('select-saved-biz');
+  if (!select) return;
+  const saved = getSavedItems('invofy_saved_businesses');
+  
+  select.innerHTML = '<option value="">— Load Saved —</option>';
+  Object.keys(saved).sort().forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+}
+
+function saveBiz() {
+  const name = prompt('Enter a name for this Business profile:');
+  if (!name) return;
+  
+  const bizProfile = {
+    name: v('f-biz-name'),
+    address: v('f-biz-address'),
+    email: v('f-biz-email'),
+    phone: v('f-biz-phone')
+  };
+  
+  const saved = getSavedItems('invofy_saved_businesses');
+  saved[name] = bizProfile;
+  saveItems('invofy_saved_businesses', saved);
+  
+  updateBizDropdown();
+  document.getElementById('select-saved-biz').value = name;
+}
+
+function deleteBiz() {
+  const select = document.getElementById('select-saved-biz');
+  const name = select.value;
+  if (!name) {
+    alert('Please select a saved business profile to delete.');
+    return;
+  }
+  if (!confirm(`Are you sure you want to delete the business profile "${name}"?`)) return;
+  
+  const saved = getSavedItems('invofy_saved_businesses');
+  delete saved[name];
+  saveItems('invofy_saved_businesses', saved);
+  
+  updateBizDropdown();
+  
+  // Clear the fields if they match the deleted profile
+  ['f-biz-name','f-biz-address','f-biz-email','f-biz-phone'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  render();
+}
+
+function loadSavedBiz(name) {
+  if (!name) return;
+  const saved = getSavedItems('invofy_saved_businesses');
+  const profile = saved[name];
+  if (!profile) return;
+  
+  document.getElementById('f-biz-name').value = profile.name || '';
+  document.getElementById('f-biz-address').value = profile.address || '';
+  document.getElementById('f-biz-email').value = profile.email || '';
+  document.getElementById('f-biz-phone').value = profile.phone || '';
+  
+  render();
+}
+
+// Client Profiles
+function updateClientDropdown() {
+  const select = document.getElementById('select-saved-client');
+  if (!select) return;
+  const saved = getSavedItems('invofy_saved_clients');
+  
+  select.innerHTML = '<option value="">— Load Saved —</option>';
+  Object.keys(saved).sort().forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+}
+
+function saveClient() {
+  const name = prompt('Enter a name for this Client profile:');
+  if (!name) return;
+  
+  const clientProfile = {
+    name: v('f-cli-name'),
+    address: v('f-cli-address'),
+    email: v('f-cli-email')
+  };
+  
+  const saved = getSavedItems('invofy_saved_clients');
+  saved[name] = clientProfile;
+  saveItems('invofy_saved_clients', saved);
+  
+  updateClientDropdown();
+  document.getElementById('select-saved-client').value = name;
+}
+
+// Client Profiles deletion
+function deleteClient() {
+  const select = document.getElementById('select-saved-client');
+  const name = select.value;
+  if (!name) {
+    alert('Please select a saved client profile to delete.');
+    return;
+  }
+  if (!confirm(`Are you sure you want to delete the client profile "${name}"?`)) return;
+  
+  const saved = getSavedItems('invofy_saved_clients');
+  delete saved[name];
+  saveItems('invofy_saved_clients', saved);
+  
+  updateClientDropdown();
+  
+  // Clear the fields if they match the deleted profile
+  ['f-cli-name','f-cli-address','f-cli-email'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  render();
+}
+
+function loadSavedClient(name) {
+  if (!name) return;
+  const saved = getSavedItems('invofy_saved_clients');
+  const profile = saved[name];
+  if (!profile) return;
+  
+  document.getElementById('f-cli-name').value = profile.name || '';
+  document.getElementById('f-cli-address').value = profile.address || '';
+  document.getElementById('f-cli-email').value = profile.email || '';
+  
+  render();
+}
+
+// Set today's date and +30 days due by default and load dropdowns
 (function() {
   const today = new Date();
   const due = new Date();
@@ -1014,6 +1238,8 @@ function clearForm() {
   const fmt = d => d.toISOString().split('T')[0];
   document.getElementById('f-inv-date').value = fmt(today);
   document.getElementById('f-inv-due').value = fmt(due);
+  updateBizDropdown();
+  updateClientDropdown();
   render();
 })();
 
