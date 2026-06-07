@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Invoice Generator · Kami</title>
+<title>Invoice Generator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 
@@ -12,9 +12,9 @@
   --ivory:       #faf9f5;
   --warm-sand:   #e8e6dc;
 
-  --brand:       #1B365D;
-  --brand-light: #2D5A8A;
-  --brand-tint:  #EEF2F7;
+  --brand:       #30302E;
+  --brand-light: #4D4D4A;
+  --brand-tint:  #EBEAE4;
 
   --near-black:  #141413;
   --dark-warm:   #3d3d3a;
@@ -512,6 +512,15 @@ textarea { resize: vertical; min-height: 64px; }
   white-space: pre-line;
 }
 
+.app-footer {
+  margin-top: 32px;
+  font-size: 11px;
+  color: var(--stone);
+  font-family: var(--serif);
+  opacity: 0.65;
+  text-align: center;
+}
+
 /* ===== Print ===== */
 
 @media print {
@@ -571,7 +580,6 @@ textarea { resize: vertical; min-height: 64px; }
 
 <header class="app-header">
   <h1>Invoice Generator</h1>
-  <span>Kami · Parchment</span>
 </header>
 
 <div class="workspace">
@@ -801,6 +809,10 @@ textarea { resize: vertical; min-height: 64px; }
         <div class="inv-footer-text" id="p-terms"></div>
       </div>
 
+    </div>
+
+    <div class="app-footer">
+      Designed with Kami Design
     </div>
   </main>
 
